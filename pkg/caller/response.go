@@ -33,6 +33,18 @@ func BadRequest(c *fiber.Ctx, errs any) error {
 	})
 }
 
+func NotFound(c *fiber.Ctx, errs any) error {
+	errorCode := ""
+	if errs != nil {
+		errorCode = fmt.Sprint(errs)
+	}
+	return Response(c, fiber.StatusNotFound, ResponseModel{
+		Successful: false,
+		ErrorCode:  errorCode,
+		Data:       nil,
+	})
+}
+
 func InternalServerError(c *fiber.Ctx, err error) error {
 	if err != nil {
 		log.Printf("internalError: %v", err)

@@ -1,0 +1,269 @@
+openapi: 3.0.3
+info:
+  title: Storefront Catalog API
+  description: API สำหรับสร้างและแก้ไขสินค้า ทุก response ใช้รูปแบบ { successful, error_code, data }
+  version: 1.0.0
+servers:
+  - url: /
+  - url: http://localhost:8080
+tags:
+  - name: Product
+paths:
+  /product:
+    post:
+      tags: [Product]
+      operationId: createProduct
+      summary: สร้างสินค้า
+      description: ต้องมี name และ price ส่วน description กับ sale_price ส่งหรือไม่ส่งก็ได้ เมื่อสำเร็จ data.data1 คือ id สินค้า และ data.data2 คือชื่อสินค้า
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProductRequest"
+            examples:
+              Success:
+                value:
+                  name: Green tea
+                  description: Hot drink
+                  sale_price: 40
+                  price: 45.5
+              Name required:
+                value:
+                  price: 45.5
+              Price required:
+                value:
+                  name: Green tea
+      responses:
+        "200":
+          description: สร้างสินค้าสำเร็จ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateProductSuccessResponse"
+              examples:
+                Success:
+                  value:
+                    successful: true
+                    error_code: ""
+                    data:
+                      data1: "11111111-1111-1111-1111-111111111111"
+                      data2: Green tea
+        "400":
+          description: คำขอไม่ถูกต้อง
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                Name required:
+                  value:
+                    successful: false
+                    error_code: name is required
+                    data: null
+                Price required:
+                  value:
+                    successful: false
+                    error_code: price is required
+                    data: null
+                Invalid json body:
+                  value:
+                    successful: false
+                    error_code: invalid json body
+                    data: null
+        "500":
+          description: ข้อผิดพลาดที่เซิร์ฟเวอร์
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                Internal server error:
+                  value:
+                    successful: false
+                    error_code: internal server error
+                    data: null
+  /product/{id}:
+    patch:
+      tags: [Product]
+      operationId: updateProduct
+      summary: แก้ไขสินค้าตาม id
+      description: แก้เฉพาะฟิลด์ที่ส่งมา description หรือ sale_price เป็น null คือล้างค่า ห้ามส่ง name หรือ price เป็น null ห้ามส่ง {} เมื่อสำเร็จได้ data เป็น null
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: id สินค้า (UUID)
+          schema:
+            type: string
+            format: uuid
+          example: "11111111-1111-1111-1111-111111111111"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProductRequest"
+            examples:
+              Success:
+                value:
+                  description: null
+              At least one field is required:
+                value: {}
+              Name cannot be null:
+                value:
+                  name: null
+              Price cannot be null:
+                value:
+                  price: null
+      responses:
+        "200":
+          description: แก้ไขสินค้าสำเร็จ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateProductSuccessResponse"
+              examples:
+                Success:
+                  value:
+                    successful: true
+                    error_code: ""
+                    data: null
+        "400":
+          description: คำขอไม่ถูกต้อง
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                At least one field is required:
+                  value:
+                    successful: false
+                    error_code: at least one field is required
+                    data: null
+                Invalid product id:
+                  value:
+                    successful: false
+                    error_code: invalid product id
+                    data: null
+                Name cannot be null:
+                  value:
+                    successful: false
+                    error_code: name cannot be null
+                    data: null
+                Price cannot be null:
+                  value:
+                    successful: false
+                    error_code: price cannot be null
+                    data: null
+        "404":
+          description: ไม่พบสินค้า
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                Product not found:
+                  value:
+                    successful: false
+                    error_code: product not found
+                    data: null
+        "500":
+          description: ข้อผิดพลาดที่เซิร์ฟเวอร์
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                Internal server error:
+                  value:
+                    successful: false
+                    error_code: internal server error
+                    data: null
+components:
+  schemas:
+    EnvelopeFields:
+      type: object
+      required: [successful, error_code, data]
+      properties:
+        successful:
+          type: boolean
+          description: true เมื่อสำเร็จ
+        error_code:
+          type: string
+          description: ว่างเมื่อสำเร็จ นอกนั้นเป็นข้อความ error ภาษาอังกฤษ
+        data:
+          nullable: true
+          description: ข้อมูลเมื่อสำเร็จ เป็น null เมื่อไม่สำเร็จ
+    CreateProductRequest:
+      type: object
+      required: [name, price]
+      properties:
+        name:
+          type: string
+          description: ชื่อสินค้า
+        description:
+          type: string
+          nullable: true
+          description: คำอธิบายสินค้า ส่งหรือไม่ส่งก็ได้
+        sale_price:
+          type: number
+          format: double
+          nullable: true
+          description: ราคาขาย ส่งหรือไม่ส่งก็ได้
+        price:
+          type: number
+          format: double
+          description: ราคาสินค้า จำเป็น
+    CreateProductData:
+      type: object
+      required: [data1, data2]
+      properties:
+        data1:
+          type: string
+          description: id สินค้า
+        data2:
+          type: string
+          description: ชื่อสินค้า
+    CreateProductSuccessResponse:
+      allOf:
+        - $ref: "#/components/schemas/EnvelopeFields"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/CreateProductData"
+    UpdateProductRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: ชื่อใหม่ ไม่ส่ง = ไม่แก้ ห้ามเป็น null
+        description:
+          type: string
+          nullable: true
+          description: คำอธิบายใหม่ ไม่ส่ง = ไม่แก้ null = ล้างค่า
+        sale_price:
+          type: number
+          format: double
+          nullable: true
+          description: ราคาขายใหม่ ไม่ส่ง = ไม่แก้ null = ล้างค่า
+        price:
+          type: number
+          format: double
+          description: ราคาใหม่ ไม่ส่ง = ไม่แก้ ห้ามเป็น null
+    UpdateProductSuccessResponse:
+      allOf:
+        - $ref: "#/components/schemas/EnvelopeFields"
+        - type: object
+          properties:
+            data:
+              nullable: true
+              description: ข้อมูลเมื่อสำเร็จ เป็น null เมื่อไม่สำเร็จ
+    ErrorResponse:
+      allOf:
+        - $ref: "#/components/schemas/EnvelopeFields"
+        - type: object
+          properties:
+            data:
+              nullable: true
+              description: ข้อมูลเมื่อสำเร็จ เป็น null เมื่อไม่สำเร็จ
