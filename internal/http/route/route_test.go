@@ -62,8 +62,8 @@ func TestAPIDocs_Index(t *testing.T) {
 	if !bytes.Contains(raw, []byte("swagger-ui")) {
 		t.Fatalf("missing swagger ui: %s", raw)
 	}
-	if !bytes.Contains(raw, []byte("English (EN)")) {
-		t.Fatalf("missing language urls: %s", raw)
+	if !bytes.Contains(raw, []byte("prismo-response-ok")) {
+		t.Fatalf("missing success response style: %s", raw)
 	}
 }
 
