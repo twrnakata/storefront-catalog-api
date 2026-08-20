@@ -14,7 +14,7 @@ paths:
       tags: [Product]
       operationId: createProduct
       summary: Create product
-      description: name and price are required. description and sale_price are optional. On success, data.data1 is the product id and data.data2 is the product name.
+      description: name and price are required. price and sale_price must be >= 0 when provided. sale_price cannot exceed price. description and sale_price are optional. On success, data.data1 is the product id and data.data2 is the product name.
       requestBody:
         required: true
         content:
@@ -24,16 +24,30 @@ paths:
             examples:
               Success:
                 value:
-                  name: Green tea
-                  description: Hot drink
-                  sale_price: 40
-                  price: 45.5
+                  name: Oolong milk tea
+                  description: Large cup, less ice
+                  sale_price: 55
+                  price: 65
               Name required:
                 value:
-                  price: 45.5
+                  price: 129
               Price required:
                 value:
-                  name: Green tea
+                  name: Ceramic mug
+              Negative price:
+                value:
+                  name: Thai iced coffee
+                  price: -5
+              Negative sale price:
+                value:
+                  name: Mango sticky rice
+                  price: 85
+                  sale_price: -10
+              Sale price exceeds price:
+                value:
+                  name: Winter jacket
+                  price: 1200
+                  sale_price: 1499
       responses:
         "200":
           description: Product created
@@ -47,8 +61,8 @@ paths:
                     successful: true
                     error_code: ""
                     data:
-                      data1: "11111111-1111-1111-1111-111111111111"
-                      data2: Green tea
+                      data1: "7c4e9b12-3a6f-4d1e-9c82-1f5a8d3e6b07"
+                      data2: Oolong milk tea
         "400":
           description: Invalid request
           content:
@@ -65,6 +79,21 @@ paths:
                   value:
                     successful: false
                     error_code: price is required
+                    data: null
+                Price must be greater than or equal to 0:
+                  value:
+                    successful: false
+                    error_code: price must be greater than or equal to 0
+                    data: null
+                Sale price must be greater than or equal to 0:
+                  value:
+                    successful: false
+                    error_code: sale_price must be greater than or equal to 0
+                    data: null
+                Sale price must not exceed price:
+                  value:
+                    successful: false
+                    error_code: sale_price must not exceed price
                     data: null
                 Invalid json body:
                   value:
@@ -88,7 +117,7 @@ paths:
       tags: [Product]
       operationId: updateProduct
       summary: Update a product
-      description: Omitted fields are left unchanged. Sending null for description or sale_price clears that field. name and price cannot be null. The body must include at least one field. On success, data is null.
+      description: Omitted fields are left unchanged. Sending null for description or sale_price clears that field. name and price cannot be null. price and sale_price must be >= 0 when provided. sale_price cannot exceed price when both are sent in the same request. The body must include at least one field. On success, data is null.
       parameters:
         - name: id
           in: path
@@ -97,7 +126,7 @@ paths:
           schema:
             type: string
             format: uuid
-          example: "11111111-1111-1111-1111-111111111111"
+          example: "a83f2c10-9e4b-4c7a-b6d1-2f8e5a0193c4"
       requestBody:
         required: true
         content:
@@ -107,7 +136,7 @@ paths:
             examples:
               Success:
                 value:
-                  description: null
+                  sale_price: 299
               At least one field is required:
                 value: {}
               Name cannot be null:
@@ -116,6 +145,16 @@ paths:
               Price cannot be null:
                 value:
                   price: null
+              Negative price:
+                value:
+                  price: -12.5
+              Negative sale price:
+                value:
+                  sale_price: -3
+              Sale price exceeds price:
+                value:
+                  price: 450
+                  sale_price: 520
       responses:
         "200":
           description: Product updated
@@ -155,6 +194,21 @@ paths:
                   value:
                     successful: false
                     error_code: price cannot be null
+                    data: null
+                Price must be greater than or equal to 0:
+                  value:
+                    successful: false
+                    error_code: price must be greater than or equal to 0
+                    data: null
+                Sale price must be greater than or equal to 0:
+                  value:
+                    successful: false
+                    error_code: sale_price must be greater than or equal to 0
+                    data: null
+                Sale price must not exceed price:
+                  value:
+                    successful: false
+                    error_code: sale_price must not exceed price
                     data: null
         "404":
           description: Product not found
@@ -210,11 +264,13 @@ components:
           type: number
           format: double
           nullable: true
-          description: optional sale price
+          minimum: 0
+          description: optional sale price; must be >= 0 and must not exceed price
         price:
           type: number
           format: double
-          description: required product price
+          minimum: 0
+          description: required product price; must be >= 0
     CreateProductData:
       type: object
       required: [data1, data2]
@@ -246,11 +302,13 @@ components:
           type: number
           format: double
           nullable: true
-          description: new sale price; omit to keep; null clears it
+          minimum: 0
+          description: new sale price; omit to keep; null clears it; must be >= 0; must not exceed price when sent together with price
         price:
           type: number
           format: double
-          description: new price; omit to keep; null is not allowed
+          minimum: 0
+          description: new price; omit to keep; null is not allowed; must be >= 0
     UpdateProductSuccessResponse:
       allOf:
         - $ref: "#/components/schemas/EnvelopeFields"

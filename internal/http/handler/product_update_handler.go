@@ -16,22 +16,18 @@ import (
 	"github.com/twrnakata/storefront-catalog-api/pkg/optional"
 )
 
-type ProductUpdateHandler struct {
-	UpdateService domainproduct.UpdateProductService
-}
-
-func (handler *ProductUpdateHandler) Update(c *fiber.Ctx) error {
-	if handler.UpdateService == nil {
+func (handler *ProductHandler) Update(c *fiber.Ctx) error {
+	if handler.ProductService == nil {
 		return caller.InternalServerError(c, apperror.ErrUpdateProductServiceNotInitialized)
 	}
 
 	var request handlermodel.UpdateProductRequestModel
-	err := validateUpdateProductRequest(c, &request)
+	err := handler.validateUpdateProductRequest(c, &request)
 	if err != nil {
 		return caller.BadRequest(c, err.Error())
 	}
 
-	err = handler.UpdateService.Update(context.Background(), &servicemodel.UpdateProductRequestModel{
+	err = handler.ProductService.Update(context.Background(), &servicemodel.UpdateProductRequestModel{
 		ID:          request.ID,
 		Name:        request.Name,
 		Description: request.Description,
@@ -48,7 +44,7 @@ func (handler *ProductUpdateHandler) Update(c *fiber.Ctx) error {
 	return caller.Success(c, nil)
 }
 
-func validateUpdateProductRequest(c *fiber.Ctx, request *handlermodel.UpdateProductRequestModel) error {
+func (handler *ProductHandler) validateUpdateProductRequest(c *fiber.Ctx, request *handlermodel.UpdateProductRequestModel) error {
 	request.ID = strings.TrimSpace(c.Params("id"))
 	if request.ID == "" {
 		return apperror.ErrInvalidProductID
@@ -73,6 +69,22 @@ func validateUpdateProductRequest(c *fiber.Ctx, request *handlermodel.UpdateProd
 	}
 	if request.Price.IsSet() && request.Price.IsNull() {
 		return apperror.ErrPriceCannotBeNull
+	}
+	if request.Price.IsSet() && !request.Price.IsNull() {
+		if err := handler.validatePriceNonNegative(request.Price.Value()); err != nil {
+			return err
+		}
+	}
+	if request.SalePrice.IsSet() && !request.SalePrice.IsNull() {
+		if err := handler.validateSalePriceNonNegative(request.SalePrice.Value()); err != nil {
+			return err
+		}
+	}
+	if request.Price.IsSet() && !request.Price.IsNull() &&
+		request.SalePrice.IsSet() && !request.SalePrice.IsNull() {
+		if err := handler.validateSalePriceNotExceedPrice(request.SalePrice.Value(), request.Price.Value()); err != nil {
+			return err
+		}
 	}
 
 	if !request.Name.IsSet() && !request.Description.IsSet() && !request.SalePrice.IsSet() && !request.Price.IsSet() {

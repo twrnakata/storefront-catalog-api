@@ -20,24 +20,14 @@ func main() {
 		log.Fatal(err)
 	}
 
-	createProductRepository, err := repositoryproduct.NewProductCreateRepository(database)
+	productRepository, err := repositoryproduct.NewProductRepository(database)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	updateProductRepository, err := repositoryproduct.NewProductUpdateRepository(database)
-	if err != nil {
-		log.Fatal(err)
-	}
+	productService := serviceproduct.NewProductService(productRepository)
 
-	createProductService := &serviceproduct.CreateProductService{
-		Repository: createProductRepository,
-	}
-	updateProductService := &serviceproduct.UpdateProductService{
-		Repository: updateProductRepository,
-	}
-
-	application := httproute.NewApp(createProductService, updateProductService)
+	application := httproute.NewApp(productService)
 	log.Printf("listening on :%s", configuration.Env.PORT)
 	log.Fatal(application.Listen(":" + configuration.Env.PORT))
 }

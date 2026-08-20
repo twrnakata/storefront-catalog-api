@@ -19,7 +19,7 @@ func TestProductCreateRepository_CreateProduct(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	repository, err := NewProductCreateRepository(database)
+	repository, err := NewProductRepository(database)
 	if err != nil {
 		t.Fatal(err)
 	}

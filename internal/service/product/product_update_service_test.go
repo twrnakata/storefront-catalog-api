@@ -4,27 +4,14 @@ import (
 	"context"
 	"testing"
 
-	repositoryproduct "github.com/twrnakata/storefront-catalog-api/internal/repository/product"
-	repositorymodel "github.com/twrnakata/storefront-catalog-api/internal/repository/product/model"
+	domainproduct "github.com/twrnakata/storefront-catalog-api/internal/domain/product"
 	servicemodel "github.com/twrnakata/storefront-catalog-api/internal/service/product/model"
 	"github.com/twrnakata/storefront-catalog-api/pkg/optional"
-
-	domainproduct "github.com/twrnakata/storefront-catalog-api/internal/domain/product"
 )
 
-type fakeUpdateProductRepository struct {
-	err error
-	id  string
-}
-
-func (repository *fakeUpdateProductRepository) UpdateProduct(executionContext context.Context, request *repositorymodel.UpdateProductRequestModel) error {
-	repository.id = request.ID
-	return repository.err
-}
-
 func TestUpdateProductService_Update(t *testing.T) {
-	repository := &fakeUpdateProductRepository{}
-	service := &UpdateProductService{Repository: repository}
+	repository := &fakeProductRepository{}
+	service := NewProductService(repository)
 	err := service.Update(context.Background(), &servicemodel.UpdateProductRequestModel{
 		ID:   "id-1",
 		Name: optional.From("Tea"),
@@ -32,13 +19,13 @@ func TestUpdateProductService_Update(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if repository.id != "id-1" {
-		t.Fatalf("got %s", repository.id)
+	if repository.updateID != "id-1" {
+		t.Fatalf("got %s", repository.updateID)
 	}
 }
 
 func TestUpdateProductService_NotFound(t *testing.T) {
-	service := &UpdateProductService{Repository: &fakeUpdateProductRepository{err: repositoryproduct.ErrProductNotFound}}
+	service := NewProductService(&fakeProductRepository{updateErr: domainproduct.ErrProductNotFound})
 	err := service.Update(context.Background(), &servicemodel.UpdateProductRequestModel{ID: "missing"})
 	if err != domainproduct.ErrProductNotFound {
 		t.Fatalf("got %v", err)

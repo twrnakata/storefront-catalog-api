@@ -2,34 +2,16 @@ package handler
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"io"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
-
-	servicemodel "github.com/twrnakata/storefront-catalog-api/internal/service/product/model"
 )
 
-type fakeCreateProductService struct {
-	id   string
-	name string
-	err  error
-}
-
-func (service *fakeCreateProductService) Create(executionContext context.Context, request *servicemodel.CreateProductRequestModel, response *servicemodel.CreateProductResponseModel) error {
-	if service.err != nil {
-		return service.err
-	}
-	response.ID = service.id
-	response.Name = request.Name
-	return nil
-}
-
 func TestProductCreateHandler_Create(t *testing.T) {
-	handler := &ProductCreateHandler{CreateService: &fakeCreateProductService{id: "abc"}}
+	handler := newTestProductHandler(&fakeProductService{createID: "abc"})
 	application := fiber.New()
 	application.Post("/product", handler.Create)
 
@@ -59,7 +41,7 @@ func TestProductCreateHandler_Create(t *testing.T) {
 }
 
 func TestProductCreateHandler_InvalidJSON_Returns400(t *testing.T) {
-	handler := &ProductCreateHandler{CreateService: &fakeCreateProductService{}}
+	handler := newTestProductHandler(&fakeProductService{})
 	application := fiber.New()
 	application.Post("/product", handler.Create)
 
@@ -75,7 +57,7 @@ func TestProductCreateHandler_InvalidJSON_Returns400(t *testing.T) {
 }
 
 func TestProductCreateHandler_NameRequired_Returns400(t *testing.T) {
-	handler := &ProductCreateHandler{CreateService: &fakeCreateProductService{}}
+	handler := newTestProductHandler(&fakeProductService{})
 	application := fiber.New()
 	application.Post("/product", handler.Create)
 
@@ -100,7 +82,7 @@ func TestProductCreateHandler_NameRequired_Returns400(t *testing.T) {
 }
 
 func TestProductCreateHandler_PriceRequired_Returns400(t *testing.T) {
-	handler := &ProductCreateHandler{CreateService: &fakeCreateProductService{}}
+	handler := newTestProductHandler(&fakeProductService{})
 	application := fiber.New()
 	application.Post("/product", handler.Create)
 
@@ -121,5 +103,96 @@ func TestProductCreateHandler_PriceRequired_Returns400(t *testing.T) {
 	}
 	if payload["error_code"] != "price is required" {
 		t.Fatalf("got %s", raw)
+	}
+}
+
+func TestProductCreateHandler_NegativePrice_Returns400(t *testing.T) {
+	handler := newTestProductHandler(&fakeProductService{})
+	application := fiber.New()
+	application.Post("/product", handler.Create)
+
+	request := httptest.NewRequest("POST", "/product", bytes.NewBufferString(`{"name":"Tea","price":-1}`))
+	request.Header.Set("Content-Type", "application/json")
+	response, err := application.Test(request, -1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if response.StatusCode != fiber.StatusBadRequest {
+		t.Fatalf("status %d", response.StatusCode)
+	}
+
+	raw, _ := io.ReadAll(response.Body)
+	var payload map[string]any
+	if err := json.Unmarshal(raw, &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload["error_code"] != "price must be greater than or equal to 0" {
+		t.Fatalf("got %s", raw)
+	}
+}
+
+func TestProductCreateHandler_NegativeSalePrice_Returns400(t *testing.T) {
+	handler := newTestProductHandler(&fakeProductService{})
+	application := fiber.New()
+	application.Post("/product", handler.Create)
+
+	request := httptest.NewRequest("POST", "/product", bytes.NewBufferString(`{"name":"Tea","price":10,"sale_price":-1}`))
+	request.Header.Set("Content-Type", "application/json")
+	response, err := application.Test(request, -1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if response.StatusCode != fiber.StatusBadRequest {
+		t.Fatalf("status %d", response.StatusCode)
+	}
+
+	raw, _ := io.ReadAll(response.Body)
+	var payload map[string]any
+	if err := json.Unmarshal(raw, &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload["error_code"] != "sale_price must be greater than or equal to 0" {
+		t.Fatalf("got %s", raw)
+	}
+}
+
+func TestProductCreateHandler_SalePriceExceedsPrice_Returns400(t *testing.T) {
+	handler := newTestProductHandler(&fakeProductService{})
+	application := fiber.New()
+	application.Post("/product", handler.Create)
+
+	request := httptest.NewRequest("POST", "/product", bytes.NewBufferString(`{"name":"Tea","price":10,"sale_price":20}`))
+	request.Header.Set("Content-Type", "application/json")
+	response, err := application.Test(request, -1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if response.StatusCode != fiber.StatusBadRequest {
+		t.Fatalf("status %d", response.StatusCode)
+	}
+
+	raw, _ := io.ReadAll(response.Body)
+	var payload map[string]any
+	if err := json.Unmarshal(raw, &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload["error_code"] != "sale_price must not exceed price" {
+		t.Fatalf("got %s", raw)
+	}
+}
+
+func TestProductCreateHandler_ZeroPrice_Returns200(t *testing.T) {
+	handler := newTestProductHandler(&fakeProductService{createID: "abc"})
+	application := fiber.New()
+	application.Post("/product", handler.Create)
+
+	request := httptest.NewRequest("POST", "/product", bytes.NewBufferString(`{"name":"Free sample","price":0}`))
+	request.Header.Set("Content-Type", "application/json")
+	response, err := application.Test(request, -1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if response.StatusCode != fiber.StatusOK {
+		t.Fatalf("status %d", response.StatusCode)
 	}
 }

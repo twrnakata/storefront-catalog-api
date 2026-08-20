@@ -15,4 +15,7 @@ var (
 	ErrAtLeastOneFieldRequired              = errors.New("at least one field is required")
 	ErrNameCannotBeNull                     = errors.New("name cannot be null")
 	ErrPriceCannotBeNull                    = errors.New("price cannot be null")
+	ErrPriceMustBeGreaterThanOrEqualToZero  = errors.New("price must be greater than or equal to 0")
+	ErrSalePriceMustBeGreaterThanOrEqualToZero = errors.New("sale_price must be greater than or equal to 0")
+	ErrSalePriceMustNotExceedPrice          = errors.New("sale_price must not exceed price")
 )

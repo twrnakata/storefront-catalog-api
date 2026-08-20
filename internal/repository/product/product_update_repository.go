@@ -4,25 +4,13 @@ import (
 	"context"
 	"errors"
 
+	domainproduct "github.com/twrnakata/storefront-catalog-api/internal/domain/product"
 	"gorm.io/gorm"
 
 	repositorymodel "github.com/twrnakata/storefront-catalog-api/internal/repository/product/model"
 )
 
-var ErrProductNotFound = errors.New("product not found")
-
-type ProductUpdateRepository struct {
-	DB *gorm.DB
-}
-
-func NewProductUpdateRepository(database *gorm.DB) (*ProductUpdateRepository, error) {
-	if database == nil {
-		return nil, gorm.ErrInvalidDB
-	}
-	return &ProductUpdateRepository{DB: database}, nil
-}
-
-func (repository *ProductUpdateRepository) UpdateProduct(executionContext context.Context, request *repositorymodel.UpdateProductRequestModel) error {
+func (repository *ProductRepository) UpdateProduct(executionContext context.Context, request *repositorymodel.UpdateProductRequestModel) error {
 	updates := map[string]any{}
 	if request.Name.IsSet() {
 		updates["name"] = request.Name.Value()
@@ -49,7 +37,7 @@ func (repository *ProductUpdateRepository) UpdateProduct(executionContext contex
 	err := repository.DB.WithContext(executionContext).Where("id = ?", request.ID).First(&existing).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return ErrProductNotFound
+			return domainproduct.ErrProductNotFound
 		}
 		return err
 	}

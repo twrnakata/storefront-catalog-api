@@ -3,17 +3,12 @@ package product
 import (
 	"context"
 
-	domainproduct "github.com/twrnakata/storefront-catalog-api/internal/domain/product"
 	repositorymodel "github.com/twrnakata/storefront-catalog-api/internal/repository/product/model"
 	servicemodel "github.com/twrnakata/storefront-catalog-api/internal/service/product/model"
 	"github.com/twrnakata/storefront-catalog-api/pkg/apperror"
 )
 
-type CreateProductService struct {
-	Repository domainproduct.CreateProductRepository
-}
-
-func (service *CreateProductService) Create(executionContext context.Context, request *servicemodel.CreateProductRequestModel, response *servicemodel.CreateProductResponseModel) error {
+func (service *ProductService) Create(executionContext context.Context, request *servicemodel.CreateProductRequestModel, response *servicemodel.CreateProductResponseModel) error {
 	if service.Repository == nil {
 		return apperror.ErrCreateProductRepositoryNotConfigured
 	}
