@@ -22,6 +22,12 @@ After the service starts, open:
 - English OpenAPI spec: `http://localhost:8080/api-docs/openapi.en.yaml`
 - Thai OpenAPI spec: `http://localhost:8080/api-docs/openapi.th.yaml`
 
+Swagger files in this repository:
+
+- `api-docs/openapi.en.yaml`
+- `api-docs/openapi.th.yaml`
+- `api-docs/index.html`
+
 ## Quick Start
 
 ### Prerequisites
