@@ -1,4 +1,4 @@
-# Storefront Catalog API (Prismo)
+# Storefront Catalog API
 
 REST API for creating and partially updating catalog products.
 
@@ -13,6 +13,14 @@ All responses follow this envelope:
 ```
 
 Swagger UI is available at `/api-docs` (with both EN/TH specs).
+
+## API Documentation (Swagger)
+
+After the service starts, open:
+
+- Swagger UI: `http://localhost:8080/api-docs`
+- English OpenAPI spec: `http://localhost:8080/api-docs/openapi.en.yaml`
+- Thai OpenAPI spec: `http://localhost:8080/api-docs/openapi.th.yaml`
 
 ## Quick Start
 
